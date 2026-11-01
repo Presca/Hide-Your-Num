@@ -13,6 +13,7 @@ export class Hud {
       paused: $('pausedOverlay'), flash: $('flashFx'), smoke: $('smokeFx'), hit: $('hitFx'), room: $('roomPill'), ping: $('pingPill'),
       mynumBox: document.querySelector('.mynum'),
     };
+    this.el.typed.innerHTML = '<span class="slot"></span>'.repeat(CFG.CODE_DIGITS);
     this.slots = [...this.el.typed.querySelectorAll('.slot')];
     this.el.gadgets.innerHTML = Object.entries(CFG.GADGETS).map(([k, g]) =>
       `<div class="gadget ready" data-kind="${k}"><div class="cd"></div><kbd>${g.key}</kbd><span>${g.label}</span></div>`).join('');

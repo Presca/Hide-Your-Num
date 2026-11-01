@@ -213,11 +213,11 @@ function frame(t) {
   const now = serverNow();
 
   controls.update(dt, G.map);
-  if (t - G.lastSend >= CFG.TICK_MS) {
+  if (t - G.lastSend >= CFG.INPUT_MS) {
     G.lastSend = t;
     G.net.send({ t: MSG.INPUT, p: [controls.pos.x, controls.pos.y, controls.pos.z], yaw: controls.yaw, pitch: controls.pitch });
   }
-  if (t - G.lastPing >= 2000) { G.lastPing = t; G.net.send({ t: MSG.PING, ts: Date.now() }); }
+  if (t - G.lastPing >= CFG.PING_MS) { G.lastPing = t; G.net.send({ t: MSG.PING, ts: Date.now() }); }
 
   const eye = { x: controls.pos.x, y: controls.pos.y + CFG.EYE_H, z: controls.pos.z };
   world.update(dt, eye, controls.yaw, controls.pitch);

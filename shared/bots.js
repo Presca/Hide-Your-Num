@@ -21,7 +21,7 @@ export class BotBrain {
     this.yawVel = 0;
   }
 
-  pickReaction() { return this.r.range(1.6, 3.4) / this.difficulty; }
+  pickReaction() { return this.r.range(2.4, 4.8) / this.difficulty; }   // five digits take a moment to read
 
   think(core, me, dt) {
     if (!me.alive) { this.target = null; this.readFor = 0; return; }

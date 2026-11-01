@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hide Your Num</title>
-<meta name="description" content="A browser FPS where you eliminate opponents by typing the number on their forehead. Up to 20 players.">
+<meta name="description" content="A browser FPS where you eliminate opponents by typing the five-digit number on their forehead. Up to 20 players.">
 <meta name="theme-color" content="#0b0f1a">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.workers.dev wss://*.workers.dev ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*; worker-src 'self' blob:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
@@ -21,7 +21,7 @@
 <!-- Menu -->
 <section id="menu" class="overlay menu">
   <div class="card">
-    <h1><span class="num">4</span><span class="num">1</span><span class="num">7</span> Hide Your Num</h1>
+    <h1><span class="num">4</span><span class="num">1</span><span class="num">7</span><span class="num">2</span><span class="num">9</span> Hide Your Num</h1>
     <p class="tag">Everyone wears a number on their forehead. Read theirs and type it before they read yours.</p>
     <label class="field"><span>Your name</span><input id="name" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Player"></label>
     <div class="buttons">
@@ -37,7 +37,7 @@
       <summary>How to play</summary>
       <ul>
         <li><b>Move</b> WASD, <b>jump</b> Space, <b>look</b> mouse. Click the game to grab the mouse, Esc releases it.</li>
-        <li><b>Eliminate</b>: look at someone's face and type their 3 digits. A wrong code locks your keys for a moment.</li>
+        <li><b>Eliminate</b>: look at someone's face and type their 5 digits. A wrong code locks your keys for a moment.</li>
         <li>You can only read a number you can actually see: in range, in front of you, no cover, no smoke, and the face turned towards you.</li>
         <li><b>Gadgets</b>: <kbd>Q</kbd> smoke (hides numbers inside), <kbd>E</kbd> flash (blinds people in front of you), <kbd>F</kbd> shuffle (new number for you).</li>
         <li><b>Tab</b> scoreboard. Most eliminations when the clock runs out wins the round.</li>
@@ -59,7 +59,7 @@
     <div class="pill" id="pingPill">—</div>
   </div>
   <div class="feed" id="feed"></div>
-  <div class="typed" id="typed"><span class="slot"></span><span class="slot"></span><span class="slot"></span></div>
+  <div class="typed" id="typed"></div>
   <div class="bottom">
     <div class="mynum"><small>Your number</small><b id="mynum">···</b><small>They see this on your forehead</small></div>
     <div class="gadgets" id="gadgets"></div>

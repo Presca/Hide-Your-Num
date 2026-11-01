@@ -1,12 +1,12 @@
 # Hide Your Num
 
-A browser first-person game for up to 20 players: everyone wears a three-digit number on their
+A browser first-person game for up to 20 players: everyone wears a five-digit number on their
 forehead. Look at someone's face, read their number and type it to eliminate them, before they read
 yours. Inspired by [Figure Me Out](https://store.steampowered.com/app/5313470/Figure_Me_Out/).
 
 - **Read before you're read.** You can only see a number that is in range, in front of you, not
   behind cover or smoke, and whose owner is facing you. Turning your back hides your number.
-- **Type it.** Digits go straight in; three digits submit. A wrong code locks your keys for a moment,
+- **Type it.** Digits go straight in; the fifth digit submits. A wrong code locks your keys for a moment,
   so guessing is expensive.
 - **Gadgets.** <kbd>Q</kbd> smoke hides every number inside the cloud, <kbd>E</kbd> flash blinds
   whoever is in front of you, <kbd>F</kbd> shuffle gives you a new number on the spot.
@@ -52,6 +52,14 @@ Put the Worker URL in `config.js` and push:
 ```js
 window.HYN_CONFIG = { workerUrl: 'https://hide-your-num.<you>.workers.dev' };
 ```
+
+## Free tier budget
+
+Cloudflare's free plan gives Durable Objects 100,000 requests a day. Outgoing snapshots are free;
+each incoming message counts, at 20 messages per request thanks to the WebSocket Hibernation API.
+A client sends 10 inputs a second, so a full 20-player room costs about 10 requests a second, or
+roughly 3 hours of non-stop full-room play per day. Smaller rooms stretch that proportionally:
+four friends can play all day. GitHub Pages is free, and the game loads three.js from a public CDN.
 
 ## Local development
 

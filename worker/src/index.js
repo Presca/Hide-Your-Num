@@ -11,7 +11,7 @@ import { CFG, MSG } from '../../shared/constants.js';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MAX_MSG_BYTES = 2048;
-const MAX_MSGS_PER_SEC = 60;
+const MAX_MSGS_PER_SEC = 30;
 
 export default {
   async fetch(req, env) {
@@ -60,6 +60,11 @@ export class Match {
     this.sockets = new Map();        // ws -> { id, name, count, windowStart }
     this.timer = null;
     this.code = null;
+    // Sockets that survived an eviction (Hibernation API): re-seat their players.
+    for (const ws of this.state.getWebSockets()) {
+      const a = ws.deserializeAttachment();
+      if (a?.id) this.seat(ws, a.id, a.name, a.code, false);
+    }
   }
 
   async fetch(req) {
@@ -72,39 +77,42 @@ export class Match {
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
-    server.accept();
 
     if (this.sockets.size >= CFG.MAX_PLAYERS) {
+      server.accept();
       server.send(JSON.stringify({ t: MSG.ERROR, code: 'full' }));
       server.close(4001, 'room full');
       return new Response(null, { status: 101, webSocket: client });
     }
 
-    if (!this.core) this.core = new MatchCore({ now: Date.now() });
+    // Hibernation API: incoming messages are metered at 20:1 against the free daily request
+    // quota, and the socket outlives the object if it is ever evicted.
+    this.state.acceptWebSocket(server);
     const id = randomId();
     const name = cleanName(url.searchParams.get('name'));
-    this.sockets.set(server, { id, name, count: 0, windowStart: Date.now() });
-    this.core.addPlayer(id, name);
-    server.send(JSON.stringify(this.core.welcome(id)));
-
-    server.addEventListener('message', ev => this.onMessage(server, ev));
-    const bye = () => this.drop(server);
-    server.addEventListener('close', bye);
-    server.addEventListener('error', bye);
-
-    if (!this.timer) this.timer = setInterval(() => this.tick(), CFG.TICK_MS);
-    this.report();
+    server.serializeAttachment({ id, name, code: this.code });
+    this.seat(server, id, name, this.code, true);
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  onMessage(ws, ev) {
+  seat(ws, id, name, code, welcome) {
+    this.code = this.code || code;
+    if (!this.core) this.core = new MatchCore({ now: Date.now() });
+    this.sockets.set(ws, { id, name, count: 0, windowStart: Date.now() });
+    if (!this.core.players.has(id)) this.core.addPlayer(id, name);
+    if (welcome) safeSend(ws, JSON.stringify(this.core.welcome(id)));
+    if (!this.timer) this.timer = setInterval(() => this.tick(), CFG.TICK_MS);
+    this.report();
+  }
+
+  webSocketMessage(ws, data) {
     const meta = this.sockets.get(ws);
-    if (!meta || typeof ev.data !== 'string' || ev.data.length > MAX_MSG_BYTES) return;
+    if (!meta || typeof data !== 'string' || data.length > MAX_MSG_BYTES) return;
     const now = Date.now();
     if (now - meta.windowStart > 1000) { meta.windowStart = now; meta.count = 0; }
     if (++meta.count > MAX_MSGS_PER_SEC) return;
     let m;
-    try { m = JSON.parse(ev.data); } catch { return; }
+    try { m = JSON.parse(data); } catch { return; }
     if (!m || typeof m !== 'object') return;
     switch (m.t) {
       case MSG.INPUT: this.core.onInput(meta.id, m); break;
@@ -113,12 +121,14 @@ export class Match {
       case MSG.PING: safeSend(ws, JSON.stringify({ t: MSG.PONG, ts: m.ts, now })); break;
     }
   }
+  webSocketClose(ws) { this.drop(ws); }
+  webSocketError(ws) { this.drop(ws); }
 
   drop(ws) {
     const meta = this.sockets.get(ws);
     if (!meta) return;
     this.sockets.delete(ws);
-    this.core.removePlayer(meta.id);
+    this.core?.removePlayer(meta.id);
     try { ws.close(1000); } catch {}
     if (this.sockets.size === 0) {
       clearInterval(this.timer); this.timer = null;
