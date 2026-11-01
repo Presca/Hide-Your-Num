@@ -102,11 +102,21 @@ export class TouchUI {
 }
 
 // Best effort: phones play in landscape and fullscreen when the browser allows it.
-export async function goImmersive() {
-  try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch {}
-  try { await screen.orientation?.lock?.('landscape'); } catch {}
+// Must be called synchronously inside a tap handler: Safari refuses fullscreen after any await.
+export function goImmersive() {
+  const el = document.documentElement;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    try {
+      const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen?.();
+      p?.catch?.(() => {});
+    } catch {}
+  }
+  try { screen.orientation?.lock?.('landscape')?.catch?.(() => {}); } catch {}
 }
 export function leaveImmersive() {
   try { screen.orientation?.unlock?.(); } catch {}
-  try { if (document.fullscreenElement) document.exitFullscreen(); } catch {}
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.webkitFullscreenElement) document.webkitExitFullscreen?.();
+  } catch {}
 }

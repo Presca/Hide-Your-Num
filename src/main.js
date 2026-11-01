@@ -8,7 +8,7 @@ import { Hud } from './hud.js';
 import { SocketNet, LocalNet } from './net.js';
 import { TouchUI, isTouchDevice, goImmersive, leaveImmersive } from './touch.js';
 
-const BUILD = 9;   // bump when the client changes; shown in the menu so stale caches are obvious
+const BUILD = 10;   // bump when the client changes; shown in the menu so stale caches are obvious
 const $ = id => document.getElementById(id);
 const cfg = window.HYN_CONFIG || {};
 const canvas = $('gl');
@@ -45,20 +45,22 @@ window.addEventListener('error', e => { if (!menu.hidden) setNote(`Error: ${e.me
 window.addEventListener('unhandledrejection', e => { if (!menu.hidden) setNote(`Error: ${e.reason?.message || e.reason}`, true); });
 
 $('btnQuick').onclick = async () => {
+  if (TOUCH) goImmersive();
   try {
     setNote('Finding a room…');
     const res = await fetch(`${cfg.workerUrl}/quick`);
     if (!res.ok) throw new Error(`server said ${res.status}`);
     const { code } = await res.json();
     joinOnline(code);
-  } catch (e) { setNote(`Could not reach the server: ${e.message}`, true); }
+  } catch (e) { setNote(`Could not reach the server: ${e.message}`, true); if (TOUCH) leaveImmersive(); }
 };
 $('btnJoin').onclick = () => {
+  if (TOUCH) goImmersive();
   const code = roomInput.value.trim().toUpperCase();
   if (!/^[A-Z0-9]{4,6}$/.test(code)) return setNote('Room codes are 4 letters, like KQ7X.', true);
   joinOnline(code);
 };
-$('btnPractice').onclick = () => start(new LocalNet(playerName(), { bots: 7, roundMs: Number(new URLSearchParams(location.search).get('round')) * 1000 || undefined }), 'PRACTICE');
+$('btnPractice').onclick = () => { if (TOUCH) goImmersive(); start(new LocalNet(playerName(), { bots: 7, roundMs: Number(new URLSearchParams(location.search).get('round')) * 1000 || undefined }), 'PRACTICE'); };
 $('btnLeave').onclick = () => leave();
 roomInput.addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin').click(); });
 
@@ -74,7 +76,7 @@ function joinOnline(code) {
   let net;
   try { net = new SocketNet(`${base}/room/${code}/ws?name=${encodeURIComponent(playerName())}`); }
   catch (e) { return setNote(`Could not open a connection: ${e.message}`, true); }
-  net.onclose = (c, reason) => setNote(c === 4001 ? 'That room is full.' : `Could not connect to room ${code} (${c}${reason ? `, ${reason}` : ''}). Check the code, or try Quick play.`, true);
+  net.onclose = (c, reason) => { setNote(c === 4001 ? 'That room is full.' : `Could not connect to room ${code} (${c}${reason ? `, ${reason}` : ''}). Check the code, or try Quick play.`, true); if (TOUCH) leaveImmersive(); };
   net.ready.then(() => { start(net, code); try { history.replaceState(null, '', `?room=${code}`); } catch {} })
     .catch(() => {});
 }
@@ -95,10 +97,8 @@ function start(net, roomLabel) {
   menu.hidden = true; hud.show(true); hud.setRoom(roomLabel); hud.paused(false); hud.alive(); hud.scoreboard(false);
   hud.setTyped('', ''); hud.setMyNum('');
   controls.enabled = false;
-  if (TOUCH) {
-    G.touch = new TouchUI(controls, { onMenu: () => hud.paused(true), onBoard: () => toggleBoard() });
-    goImmersive();
-  } else controls.requestLock();
+  if (TOUCH) G.touch = new TouchUI(controls, { onMenu: () => hud.paused(true), onBoard: () => toggleBoard() });
+  else controls.requestLock();
   if (controls.noLock) window.__hyn = { G, controls, world, hud };   // automated tests only
   G.raf = requestAnimationFrame(frame);
 }
