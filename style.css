@@ -37,6 +37,7 @@ h1 .num:nth-child(2){transform:rotate(3deg)} h1 .num:nth-child(3){transform:rota
 .check input{width:auto;margin:3px 0 0;accent-color:var(--accent)} .check b{color:var(--ink)}
 .note{color:var(--muted);font-size:14px;min-height:1.2em;margin:14px 0 0}
 .note.err{color:var(--danger)}
+.note.hint{color:var(--accent);font-size:13px;margin-top:8px}
 .howto{text-align:left;margin-top:18px;color:var(--muted);font-size:14px}
 .howto summary{cursor:pointer;color:var(--ink);font-weight:700}
 .howto ul{padding-left:18px;line-height:1.5} .howto b{color:var(--ink)}

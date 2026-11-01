@@ -8,7 +8,7 @@ import { Hud } from './hud.js';
 import { SocketNet, LocalNet } from './net.js';
 import { TouchUI, isTouchDevice, goImmersive, leaveImmersive } from './touch.js';
 
-const BUILD = 11;   // bump when the client changes; shown in the menu so stale caches are obvious
+const BUILD = 12;   // bump when the client changes; shown in the menu so stale caches are obvious
 const $ = id => document.getElementById(id);
 const cfg = window.HYN_CONFIG || {};
 const canvas = $('gl');
@@ -33,6 +33,11 @@ if (!cfg.workerUrl) {
 }
 const TOUCH = isTouchDevice();
 if (TOUCH) document.documentElement.classList.add('is-touch');
+// Phones that cannot go fullscreen (Chrome and other non-Safari browsers on iPhone) get a hint;
+// a home-screen install runs without any browser chrome.
+const STANDALONE = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+const CAN_FULLSCREEN = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+if (TOUCH && !STANDALONE && !CAN_FULLSCREEN) $('fsHint').hidden = false;
 // Check the match server on load so a blocked or down server is visible before anyone clicks.
 if (cfg.workerUrl) {
   const host = cfg.workerUrl.replace(/^https?:\/\//, '');
