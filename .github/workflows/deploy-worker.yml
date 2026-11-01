@@ -1,0 +1,79 @@
+# Deploys the match server to Cloudflare Workers and points the site at it.
+#
+# One-time setup: Repo → Settings → Secrets and variables → Actions → New repository secret
+#   CLOUDFLARE_API_TOKEN   a token made from the "Edit Cloudflare Workers" template at
+#                          https://dash.cloudflare.com/profile/api-tokens
+#   CLOUDFLARE_ACCOUNT_ID  optional; only needed if the token can see more than one account
+# Then run this workflow once from the Actions tab. It also re-deploys whenever the server or the
+# shared rules change on main.
+name: Deploy match server
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['worker/**', 'shared/**']
+
+permissions:
+  contents: write
+
+concurrency: deploy-worker
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for the Cloudflare token
+        id: check
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set. Add it under Settings → Secrets and variables → Actions, then re-run."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ok == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ok == 'true'
+        with:
+          node-version: 22
+
+      - name: Install wrangler
+        if: steps.check.outputs.ok == 'true'
+        working-directory: worker
+        run: npm ci
+
+      - name: Deploy to Cloudflare Workers
+        if: steps.check.outputs.ok == 'true'
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+
+      - name: Point the site at the Worker
+        if: steps.check.outputs.ok == 'true'
+        env:
+          URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          if [ -z "$URL" ]; then echo "::error::wrangler did not report a deployment URL"; exit 1; fi
+          node -e '
+            const fs = require("fs");
+            const url = process.env.URL.replace(/\/$/, "");
+            const s = fs.readFileSync("config.js", "utf8");
+            const out = s.replace(/workerUrl:\s*'"'"'[^'"'"']*'"'"'/, `workerUrl: '"'"'${url}'"'"'`);
+            if (out === s) { console.log("config.js already points at", url); process.exit(0); }
+            fs.writeFileSync("config.js", out);
+            console.log("config.js now points at", url);
+          '
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Point the site at the deployed match server"
+          git push

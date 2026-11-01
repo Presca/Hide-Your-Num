@@ -34,7 +34,24 @@ Repo → **Settings → Pages** → Source: *Deploy from a branch* → `main`, `
 The game is live at `https://<you>.github.io/Hide-Your-Num/` with Practice working immediately.
 
 ### 2. Match server
-You need a free Cloudflare account and Node.js.
+You need a free Cloudflare account. Everything else is done by a GitHub Action.
+
+1. Make an API token from the **Edit Cloudflare Workers** template at
+   https://dash.cloudflare.com/profile/api-tokens.
+2. In the repo: **Settings → Secrets and variables → Actions → New repository secret**, name
+   `CLOUDFLARE_API_TOKEN`, paste the token. (Add `CLOUDFLARE_ACCOUNT_ID` too if the token can see
+   more than one Cloudflare account.)
+3. **Actions → Deploy match server → Run workflow.**
+
+The workflow deploys `worker/` with wrangler, then commits the Worker's URL into `config.js` so the
+site picks it up on the next Pages build, about a minute later. It re-runs by itself whenever the
+server or the shared rules change on `main`.
+
+`worker/wrangler.toml` lists the websites allowed to connect (`ALLOWED_ORIGINS`). It already
+contains `https://presca.github.io` and localhost; add your own domain if you use one.
+
+#### Deploying by hand instead
+With Node.js installed:
 
 ```bash
 cd worker
@@ -43,11 +60,7 @@ npx wrangler login
 npx wrangler deploy        # prints https://hide-your-num.<you>.workers.dev
 ```
 
-`worker/wrangler.toml` lists the websites allowed to connect (`ALLOWED_ORIGINS`). It already
-contains `https://presca.github.io` and localhost; add your own domain if you use one.
-
-### 3. Point the game at it
-Put the Worker URL in `config.js` and push:
+Then put that URL in `config.js` and push:
 
 ```js
 window.HYN_CONFIG = { workerUrl: 'https://hide-your-num.<you>.workers.dev' };
