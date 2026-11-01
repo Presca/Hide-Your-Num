@@ -3,5 +3,5 @@
 // Leave workerUrl empty and only Practice (vs bots) is available. Set it to your deployed Worker,
 // e.g. 'https://hide-your-num.<your-subdomain>.workers.dev', to enable online matches.
 window.HYN_CONFIG = {
-  workerUrl: ''
+  workerUrl: 'https://hide-your-num.prescreatives.workers.dev'
 };
