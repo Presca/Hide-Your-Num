@@ -2,11 +2,13 @@
 // and the renderer. Distances are metres, times are milliseconds, speeds are metres per second.
 export const CFG = {
   MAX_PLAYERS: 20,
-  TICK_MS: 50,                 // server simulation + snapshot rate (20 Hz)
+  TICK_MS: 50,                 // server simulation + snapshot rate (20 Hz); outgoing messages are free
+  INPUT_MS: 100,               // client input rate (10 Hz); incoming messages count against the free quota
+  PING_MS: 5_000,
   ROUND_MS: 4 * 60_000,        // one round
   INTERMISSION_MS: 12_000,     // scoreboard between rounds
   RESPAWN_MS: 3_000,
-  CODE_DIGITS: 3,              // the number on your forehead
+  CODE_DIGITS: 5,              // the number on your forehead
 
   ARENA: 64,                   // arena is ARENA x ARENA, centred on the origin
   WALL_H: 4,

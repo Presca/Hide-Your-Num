@@ -37,7 +37,7 @@ export class World {
     this.bodyGeo = new THREE.CapsuleGeometry(0.38, 0.62, 4, 14);
     this.headGeo = new THREE.SphereGeometry(0.28, 20, 14);
     this.eyeGeo = new THREE.SphereGeometry(0.04, 8, 6);
-    this.plateGeo = new THREE.PlaneGeometry(0.5, 0.3);
+    this.plateGeo = new THREE.PlaneGeometry(0.66, 0.27);
     this.fxGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
     this.skinMat = new THREE.MeshStandardMaterial({ color: '#f1d7c0', roughness: 0.8 });
     this.eyeMat = new THREE.MeshBasicMaterial({ color: '#111' });
@@ -85,10 +85,10 @@ export class World {
     const head = new THREE.Group(); head.position.y = 1.56; g.add(head);
     const skull = new THREE.Mesh(this.headGeo, this.skinMat); skull.castShadow = true; head.add(skull);
     for (const sx of [-0.1, 0.1]) { const e = new THREE.Mesh(this.eyeGeo, this.eyeMat); e.position.set(sx, -0.03, -0.26); head.add(e); }
-    const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 160;
+    const canvas = document.createElement('canvas'); canvas.width = 352; canvas.height = 144;
     const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
     const plate = new THREE.Mesh(this.plateGeo, new THREE.MeshBasicMaterial({ map: tex }));
-    plate.position.set(0, 0.11, -0.275); plate.rotation.y = Math.PI; head.add(plate);
+    plate.position.set(0, 0.12, -0.275); plate.rotation.y = Math.PI; head.add(plate);
     const tag = makeTag(info.name, info.color); tag.position.y = 2.15; g.add(tag);
     g.visible = false;
     this.scene.add(g);
@@ -176,9 +176,9 @@ export class World {
 function drawPlate(rp, code, hidden) {
   const c = rp.canvas, ctx = c.getContext('2d');
   ctx.fillStyle = hidden ? '#3a3a3a' : '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
-  ctx.strokeStyle = '#111'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, c.width - 10, c.height - 10);
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.strokeRect(4, 4, c.width - 8, c.height - 8);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = '800 118px "JetBrains Mono", ui-monospace, Menlo, monospace';
+  ctx.font = '800 96px "JetBrains Mono", ui-monospace, Menlo, monospace';
   if (hidden) {
     ctx.fillStyle = '#9a9a9a';
     const s = Array.from({ length: CFG.CODE_DIGITS }, () => '0123456789'[Math.floor(Math.random() * 10)]).join('');

@@ -24,7 +24,7 @@ a{color:var(--accent)}
 .card{width:min(520px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:28px 26px;backdrop-filter:blur(12px);box-shadow:0 30px 80px rgba(0,0,0,.5)}
 h1{margin:0 0 8px;font-size:clamp(26px,5vw,36px);letter-spacing:-.02em}
 h1 .num{display:inline-block;font-family:var(--mono);background:#fff;color:#111;border-radius:7px;padding:0 7px;margin-right:3px;font-size:.8em;transform:rotate(-4deg)}
-h1 .num:nth-child(2){transform:rotate(3deg)} h1 .num:nth-child(3){transform:rotate(-2deg);margin-right:10px}
+h1 .num:nth-child(2){transform:rotate(3deg)} h1 .num:nth-child(3){transform:rotate(-2deg)} h1 .num:nth-child(4){transform:rotate(2deg)} h1 .num:nth-child(5){transform:rotate(-3deg);margin-right:10px}
 .tag{color:var(--muted);margin:0 0 22px;line-height:1.4}
 .field{display:block;text-align:left;margin-bottom:14px}
 .field span{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
@@ -56,7 +56,7 @@ h1 .num:nth-child(2){transform:rotate(3deg)} h1 .num:nth-child(3){transform:rota
 .feed .me{border-color:var(--accent)} .feed .code{font-family:var(--mono);background:#fff;color:#111;border-radius:5px;padding:0 5px;margin-left:4px}
 @keyframes fadein{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 .typed{position:absolute;left:50%;top:calc(50% + 44px);transform:translateX(-50%);display:flex;gap:8px}
-.typed .slot{width:40px;height:52px;border-radius:9px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.25);font-family:var(--mono);font-size:32px;line-height:48px;text-align:center;color:#fff;transition:background .1s}
+.typed .slot{width:36px;height:50px;border-radius:9px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.25);font-family:var(--mono);font-size:32px;line-height:48px;text-align:center;color:#fff;transition:background .1s}
 .typed .slot.on{background:#fff;color:#111}
 .typed.locked .slot{border-color:var(--danger);animation:shake .35s}
 .typed.ok .slot{border-color:var(--ok);background:var(--ok);color:#06281c}
@@ -64,7 +64,7 @@ h1 .num:nth-child(2){transform:rotate(3deg)} h1 .num:nth-child(3){transform:rota
 .bottom{position:absolute;left:16px;right:16px;bottom:16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:12px}
 .mynum{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 14px;display:inline-flex;flex-direction:column;align-items:center;gap:4px;justify-self:start}
 .mynum small{color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
-.mynum b{font-family:var(--mono);font-size:40px;background:#fff;color:#111;border-radius:10px;padding:0 14px;line-height:1.25}
+.mynum b{font-family:var(--mono);font-size:34px;background:#fff;color:#111;border-radius:10px;padding:0 14px;line-height:1.25}
 .mynum.hidden b{background:#444;color:#aaa}
 .gadgets{display:flex;gap:10px;justify-self:center}
 .gadget{position:relative;width:70px;height:70px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;overflow:hidden}
