@@ -7,6 +7,7 @@ import { Controls } from './controls.js';
 import { Hud } from './hud.js';
 import { SocketNet, LocalNet } from './net.js';
 
+const BUILD = 8;   // bump when the client changes; shown in the menu so stale caches are obvious
 const $ = id => document.getElementById(id);
 const cfg = window.HYN_CONFIG || {};
 const canvas = $('gl');
@@ -20,6 +21,7 @@ const store = { get: k => { try { return localStorage.getItem(k); } catch { retu
 nameInput.value = store.get('hyn.name') || '';
 const urlRoom = new URLSearchParams(location.search).get('room');
 if (urlRoom) roomInput.value = urlRoom.toUpperCase();
+$('build').textContent = `build ${BUILD}`;
 if (!cfg.workerUrl) {
   $('btnQuick').disabled = true; $('btnJoin').disabled = true;
   note.textContent = 'Online play is not configured on this site yet (see config.js). Practice works.';
