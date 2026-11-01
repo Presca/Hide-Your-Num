@@ -1,0 +1,34 @@
+# Checks the deployed match server from the outside: health, quick play, two players, a read and
+# an elimination. Run it from the Actions tab when online play misbehaves.
+name: Live check
+
+on:
+  workflow_dispatch:
+    inputs:
+      room:
+        description: 'Room code to inspect (optional)'
+        required: false
+        default: ''
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save ws@8
+      - name: Read the Worker URL from config.js
+        id: cfg
+        run: |
+          url=$(node -p 'global.window = {}; require("./config.js"); window.HYN_CONFIG.workerUrl')
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Worker: $url"
+      - name: Inspect a room
+        if: inputs.room != ''
+        run: |
+          curl -sS -H "Origin: https://presca.github.io" "${{ steps.cfg.outputs.url }}/room/${{ inputs.room }}/info"
+          echo
+      - name: Play a short match
+        run: node tools/live-check.mjs "${{ steps.cfg.outputs.url }}"
