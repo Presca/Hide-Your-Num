@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hide Your Num</title>
+<meta name="description" content="A browser FPS where you eliminate opponents by typing the number on their forehead. Up to 20 players.">
+<meta name="theme-color" content="#0b0f1a">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.workers.dev wss://*.workers.dev ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*; worker-src 'self' blob:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<!-- Menu -->
+<section id="menu" class="overlay menu">
+  <div class="card">
+    <h1><span class="num">4</span><span class="num">1</span><span class="num">7</span> Hide Your Num</h1>
+    <p class="tag">Everyone wears a number on their forehead. Read theirs and type it before they read yours.</p>
+    <label class="field"><span>Your name</span><input id="name" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Player"></label>
+    <div class="buttons">
+      <button id="btnQuick" class="primary">Quick play</button>
+      <div class="join">
+        <input id="roomCode" maxlength="6" placeholder="ROOM" autocomplete="off" spellcheck="false">
+        <button id="btnJoin">Join room</button>
+      </div>
+      <button id="btnPractice">Practice vs bots</button>
+    </div>
+    <p id="menuNote" class="note"></p>
+    <details class="howto">
+      <summary>How to play</summary>
+      <ul>
+        <li><b>Move</b> WASD, <b>jump</b> Space, <b>look</b> mouse. Click the game to grab the mouse, Esc releases it.</li>
+        <li><b>Eliminate</b>: look at someone's face and type their 3 digits. A wrong code locks your keys for a moment.</li>
+        <li>You can only read a number you can actually see: in range, in front of you, no cover, no smoke, and the face turned towards you.</li>
+        <li><b>Gadgets</b>: <kbd>Q</kbd> smoke (hides numbers inside), <kbd>E</kbd> flash (blinds people in front of you), <kbd>F</kbd> shuffle (new number for you).</li>
+        <li><b>Tab</b> scoreboard. Most eliminations when the clock runs out wins the round.</li>
+      </ul>
+    </details>
+  </div>
+  <footer>Desktop with keyboard and mouse. Inspired by <a href="https://store.steampowered.com/app/5313470/Figure_Me_Out/" rel="noopener" target="_blank">Figure Me Out</a>.</footer>
+</section>
+
+<!-- In-game HUD -->
+<section id="hud" class="hud" hidden>
+  <div class="crosshair"></div>
+  <div class="flash" id="flashFx"></div>
+  <div class="smokeFx" id="smokeFx"></div>
+  <div class="hit" id="hitFx"></div>
+  <div class="top">
+    <div class="pill" id="roomPill">ROOM</div>
+    <div class="timer" id="timer">4:00</div>
+    <div class="pill" id="pingPill">—</div>
+  </div>
+  <div class="feed" id="feed"></div>
+  <div class="typed" id="typed"><span class="slot"></span><span class="slot"></span><span class="slot"></span></div>
+  <div class="bottom">
+    <div class="mynum"><small>Your number</small><b id="mynum">···</b><small>They see this on your forehead</small></div>
+    <div class="gadgets" id="gadgets"></div>
+    <div class="score"><span id="kills">0</span> elims<br><span id="deaths">0</span> down</div>
+  </div>
+  <div class="center" id="centerMsg"></div>
+  <div class="overlay dead" id="deadOverlay" hidden>
+    <h2>Read out</h2>
+    <p id="deadBy">by someone</p>
+    <p class="count">Back in <b id="respawnIn">3</b></p>
+  </div>
+  <div class="overlay board" id="scoreboard" hidden>
+    <h2 id="boardTitle">Scoreboard</h2>
+    <table><thead><tr><th>#</th><th>Name</th><th>Elims</th><th>Down</th></tr></thead><tbody id="boardBody"></tbody></table>
+    <p id="boardFoot" class="note"></p>
+  </div>
+  <div class="overlay paused" id="pausedOverlay" hidden>
+    <h2>Click to play</h2>
+    <p>Mouse released. Click to grab it again, or press <kbd>Esc</kbd> twice to leave.</p>
+    <button id="btnLeave">Leave match</button>
+  </div>
+</section>
+
+<script src="config.js"></script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

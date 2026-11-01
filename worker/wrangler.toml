@@ -1,0 +1,21 @@
+name = "hide-your-num"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Each match room is one Durable Object holding up to 20 WebSockets; a single Lobby object hands out
+# room codes for quick play. Durable Objects are available on the free plan (SQLite-backed classes).
+[[durable_objects.bindings]]
+name = "MATCH"
+class_name = "Match"
+
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "Lobby"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Match", "Lobby"]
+
+[vars]
+# Websites allowed to connect, comma separated. Add your custom domain here if you use one.
+ALLOWED_ORIGINS = "https://presca.github.io,http://localhost:8080,http://127.0.0.1:8080"
