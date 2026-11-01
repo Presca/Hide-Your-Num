@@ -8,7 +8,7 @@ import { Hud } from './hud.js';
 import { SocketNet, LocalNet } from './net.js';
 import { TouchUI, isTouchDevice, goImmersive, leaveImmersive } from './touch.js';
 
-const BUILD = 10;   // bump when the client changes; shown in the menu so stale caches are obvious
+const BUILD = 11;   // bump when the client changes; shown in the menu so stale caches are obvious
 const $ = id => document.getElementById(id);
 const cfg = window.HYN_CONFIG || {};
 const canvas = $('gl');
@@ -132,7 +132,8 @@ function toggleBoard() {
 controls.onDigit = d => {
   if (!G || !G.self) return;
   const now = serverNow();
-  if (!G.self.alive || G.round.phase !== 'play' || now < G.self.lockedUntil) { hud.setTyped(G.buf, 'locked'); hud.beep('miss'); return; }
+  if (!G.self.alive || G.round.phase !== 'play') return;
+  if (now < G.self.lockedUntil) { hud.setTyped(G.buf, 'locked'); hud.typedMsg('Wait…', 500); hud.beep('miss'); return; }
   G.buf += d; hud.beep('key');
   hud.setTyped(G.buf, '');
   if (G.buf.length >= CFG.CODE_DIGITS) {
@@ -234,7 +235,14 @@ function onEvent(e) {
       if (me) { G.deadBy = name(e.by); hud.dead(G.deadBy); hud.beep('die'); controls.enabled = false; }
       break;
     }
-    case 'miss': hud.setTyped(e.code, 'locked'); hud.beep('miss'); setTimeout(() => G && hud.setTyped(G.buf, ''), CFG.TYPE_LOCKOUT_MS); break;
+    case 'miss': {
+      if (G.self) G.self.lockedUntil = Math.max(G.self.lockedUntil || 0, e.until || 0);
+      hud.setTyped(e.code, 'locked'); hud.beep('miss');
+      hud.typedMsg(e.why === 'sight' ? 'Out of sight' : e.why === 'locked' ? 'Wait…' : `No one wears ${e.code}`);
+      const wait = Math.max(300, (e.until || 0) - serverNow());
+      setTimeout(() => G && hud.setTyped(G.buf, ''), wait);
+      break;
+    }
     case 'flash': if (e.victims.includes(G.id)) { hud.beep('flash'); } break;
     case 'shuffle': if (e.id === G.id) hud.center('New number', 900); break;
   }

@@ -15,6 +15,8 @@ export class Hud {
     };
     this.el.typed.innerHTML = '<span class="slot"></span>'.repeat(CFG.CODE_DIGITS);
     this.slots = [...this.el.typed.querySelectorAll('.slot')];
+    this.el.typedMsg = document.getElementById('typedMsg');
+    this.typedMsgTimer = 0;
     this.el.gadgets.innerHTML = Object.entries(CFG.GADGETS).map(([k, g]) =>
       `<div class="gadget ready" data-kind="${k}"><div class="cd"></div><kbd>${g.key}</kbd><span>${g.label}</span></div>`).join('');
     this.gadgetEls = Object.fromEntries([...this.el.gadgets.children].map(e => [e.dataset.kind, e]));
@@ -31,6 +33,10 @@ export class Hud {
     this.slots.forEach((s, i) => { s.textContent = buf[i] || ''; s.classList.toggle('on', !!buf[i]); });
     this.el.typed.classList.toggle('locked', state === 'locked');
     this.el.typed.classList.toggle('ok', state === 'ok');
+  }
+  typedMsg(text, ms = 1400) {
+    this.el.typedMsg.textContent = text; this.el.typedMsg.classList.add('on');
+    clearTimeout(this.typedMsgTimer); this.typedMsgTimer = setTimeout(() => this.el.typedMsg.classList.remove('on'), ms);
   }
   setMyNum(code, hidden) {
     this.el.mynum.textContent = code || '···';

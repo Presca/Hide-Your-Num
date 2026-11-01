@@ -34,7 +34,7 @@ export class MatchCore {
       alive: false, deadUntil: this.now, code: '',
       lockedUntil: 0, flashedUntil: 0, hiddenUntil: 0,
       cds: { smoke: 0, flash: 0, shuffle: 0 },
-      kills: 0, deaths: 0, streak: 0, lastInputAt: this.clock(), moveBudget: 1,
+      kills: 0, deaths: 0, streak: 0, lastInputAt: this.clock(), moveBudget: 1, seen: new Map(),
       color: COLORS[this.players.size % COLORS.length], dirty: true,
     };
     this.players.set(id, p);
@@ -110,21 +110,25 @@ export class MatchCore {
   onType(id, code) {
     const p = this.players.get(id);
     if (!p || !p.alive || this.round.phase !== 'play') return;
-    if (this.now < p.lockedUntil) return;
     code = String(code || '').replace(/\D/g, '').slice(0, CFG.CODE_DIGITS);
     if (code.length !== CFG.CODE_DIGITS) return;
-    let victim = null;
-    for (const q of this.players.values()) {
-      if (q === p || !q.alive || q.code !== code) continue;
-      if (this.canSee(p, q)) victim = q;
-      break;
-    }
-    if (!victim) {
+    if (this.now < p.lockedUntil) { this.sendTo(id, { t: MSG.EVENT, k: 'miss', code, why: 'locked', until: p.lockedUntil }); return; }
+    let wearer = null;
+    for (const q of this.players.values()) if (q !== p && q.alive && q.code === code) { wearer = q; break; }
+    if (!wearer) {
       p.lockedUntil = this.now + CFG.TYPE_LOCKOUT_MS; p.dirty = true;
-      this.sendTo(id, { t: MSG.EVENT, k: 'miss', code });
+      this.sendTo(id, { t: MSG.EVENT, k: 'miss', code, why: 'nocode', until: p.lockedUntil });
       return;
     }
-    this.kill(p, victim, code);
+    // Right code: it counts if the wearer is in sight now, or was within the grace window (reading
+    // five digits takes a moment and people move).
+    const seenAt = p.seen.get(wearer.id) || 0;
+    if (!this.canSee(p, wearer) && this.now - seenAt > CFG.TYPE_GRACE_MS) {
+      p.lockedUntil = this.now + CFG.TYPE_LOCKOUT_SIGHT_MS; p.dirty = true;
+      this.sendTo(id, { t: MSG.EVENT, k: 'miss', code, why: 'sight', until: p.lockedUntil });
+      return;
+    }
+    this.kill(p, wearer, code);
   }
 
   onGadget(id, kind) {
@@ -196,6 +200,9 @@ export class MatchCore {
   canRead(reader, target) {
     if (this.now < target.hiddenUntil) return false;
     if (!this.canSee(reader, target)) return false;
+    return this.facing(target, reader);
+  }
+  facing(target, reader) {
     const tf = forwardFromYawPitch(target.yaw, 0);
     const dx = reader.pos.x - target.pos.x, dz = reader.pos.z - target.pos.z;
     const d = Math.hypot(dx, dz) || 1e-6;
@@ -270,7 +277,10 @@ export class MatchCore {
       this.outPrivate.delete(viewer.id);
       const players = base.map(b => {
         const q = this.players.get(b.id);
-        const readable = q === viewer || this.canRead(viewer, q);
+        if (q === viewer) return { ...b, n: q.code };
+        const see = this.canSee(viewer, q);
+        if (see) viewer.seen.set(q.id, now);
+        const readable = see && now >= q.hiddenUntil && this.facing(q, viewer);
         return readable ? { ...b, n: q.code } : b;
       });
       msgs.push({ t: MSG.STATE, tick: this.tickNo, now, players, smokes, round: this.round.phase, endsAt: this.round.endsAt });

@@ -24,6 +24,8 @@ export const CFG = {
   READ_CONE_DEG: 32,           // half-angle: target must be this close to the crosshair
   FACE_CONE_DEG: 80,           // half-angle: target must be facing you this much (number is on the FRONT)
   TYPE_LOCKOUT_MS: 900,        // penalty after typing a code nobody wears
+  TYPE_LOCKOUT_SIGHT_MS: 450,  // shorter penalty when the code was right but the target is out of sight
+  TYPE_GRACE_MS: 800,          // a code still counts this long after you last had the target in sight
 
   GADGETS: {
     smoke:   { key: 'Q', cd: 20_000, radius: 6.5, duration: 7_000, label: 'Smoke' },
