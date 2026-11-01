@@ -15,7 +15,9 @@ let world = null;
 const controls = new Controls(canvas);
 
 const menu = $('menu'), nameInput = $('name'), roomInput = $('roomCode'), note = $('menuNote');
-nameInput.value = localStorage.getItem('hyn.name') || '';
+// Storage can throw in private windows or with strict privacy settings; the game must not care.
+const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+nameInput.value = store.get('hyn.name') || '';
 const urlRoom = new URLSearchParams(location.search).get('room');
 if (urlRoom) roomInput.value = urlRoom.toUpperCase();
 if (!cfg.workerUrl) {
@@ -23,6 +25,16 @@ if (!cfg.workerUrl) {
   note.textContent = 'Online play is not configured on this site yet (see config.js). Practice works.';
 }
 if (!matchMedia('(pointer:fine)').matches) note.textContent = 'This game needs a mouse and keyboard.';
+// Check the match server on load so a blocked or down server is visible before anyone clicks.
+if (cfg.workerUrl) {
+  const host = cfg.workerUrl.replace(/^https?:\/\//, '');
+  fetch(`${cfg.workerUrl}/health`, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+    .then(() => { if (!note.textContent) setNote(`Server online: ${host}`); })
+    .catch(e => setNote(`Can't reach the match server at ${host} (${e.message}). An ad blocker, VPN or network filter may be blocking workers.dev. Practice still works.`, true));
+}
+window.addEventListener('error', e => { if (!menu.hidden) setNote(`Error: ${e.message}`, true); });
+window.addEventListener('unhandledrejection', e => { if (!menu.hidden) setNote(`Error: ${e.reason?.message || e.reason}`, true); });
 
 $('btnQuick').onclick = async () => {
   try {
@@ -44,16 +56,19 @@ roomInput.addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin')
 
 function playerName() {
   const n = nameInput.value.trim().slice(0, 14) || 'Player';
-  localStorage.setItem('hyn.name', n);
+  store.set('hyn.name', n);
   return n;
 }
 function setNote(t, err = false) { note.textContent = t; note.classList.toggle('err', err); }
 function joinOnline(code) {
   const base = cfg.workerUrl.replace(/^http/, 'ws').replace(/\/$/, '');
   setNote(`Joining ${code}…`);
-  const net = new SocketNet(`${base}/room/${code}/ws?name=${encodeURIComponent(playerName())}`);
-  net.ready.then(() => { start(net, code); history.replaceState(null, '', `?room=${code}`); })
-    .catch(() => setNote('Could not connect to that room.', true));
+  let net;
+  try { net = new SocketNet(`${base}/room/${code}/ws?name=${encodeURIComponent(playerName())}`); }
+  catch (e) { return setNote(`Could not open a connection: ${e.message}`, true); }
+  net.onclose = (c, reason) => setNote(c === 4001 ? 'That room is full.' : `Could not connect to room ${code} (${c}${reason ? `, ${reason}` : ''}). Check the code, or try Quick play.`, true);
+  net.ready.then(() => { start(net, code); try { history.replaceState(null, '', `?room=${code}`); } catch {} })
+    .catch(() => {});
 }
 
 // ------------------------------------------------------------------------------------------------
