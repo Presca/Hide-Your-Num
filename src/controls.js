@@ -17,6 +17,7 @@ export class Controls {
     this.jumpQueued = false;
     this.touchMove = { x: 0, y: 0 };   // joystick vector from touch.js: x right, y forward, each -1..1
     this.keyLook = false;              // true: WASD turns the view and the arrow keys walk (trackpad friendly)
+    this.inGame = false;               // keys are only captured during a match, never in the menu or a text field
     // ?nolock: automated tests drive the game without a real pointer lock.
     this.noLock = new URLSearchParams(location.search).has('nolock') || (navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches);
     if (this.noLock) this.locked = true;
@@ -33,8 +34,9 @@ export class Controls {
       this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - e.movementY * SENS));
       if (this.yaw > Math.PI) this.yaw -= Math.PI * 2; if (this.yaw < -Math.PI) this.yaw += Math.PI * 2;
     });
+    const editable = e => { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable); };
     document.addEventListener('keydown', e => {
-      if (!this.locked) return;
+      if (!this.locked || !this.inGame || editable(e)) return;
       if (e.repeat) { if (e.code === 'Tab') e.preventDefault(); return; }
       const c = e.code;
       if (c === 'Tab') { e.preventDefault(); this.onTab?.(true); return; }
@@ -45,6 +47,7 @@ export class Controls {
       this.keys.add(c);
     });
     document.addEventListener('keyup', e => {
+      if (!this.inGame || editable(e)) return;
       if (e.code === 'Tab') { e.preventDefault(); this.onTab?.(false); }
       this.keys.delete(e.code);
     });

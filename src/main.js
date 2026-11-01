@@ -8,7 +8,7 @@ import { Hud } from './hud.js';
 import { SocketNet, LocalNet } from './net.js';
 import { TouchUI, isTouchDevice, goImmersive, leaveImmersive } from './touch.js';
 
-const BUILD = 12;   // bump when the client changes; shown in the menu so stale caches are obvious
+const BUILD = 13;   // bump when the client changes; shown in the menu so stale caches are obvious
 const $ = id => document.getElementById(id);
 const cfg = window.HYN_CONFIG || {};
 const canvas = $('gl');
@@ -99,6 +99,7 @@ function start(net, roomLabel) {
   net.on(onMessage);
   net.onclose = (code, reason) => { leave(code === 4001 ? 'That room is full.' : `Disconnected${reason ? `: ${reason}` : ''}.`); };
   document.documentElement.classList.add('ingame');
+  controls.inGame = true; controls.keys.clear();
   menu.hidden = true; hud.show(true); hud.setRoom(roomLabel); hud.paused(false); hud.alive(); hud.scoreboard(false);
   hud.setTyped('', ''); hud.setMyNum('');
   controls.enabled = false;
@@ -117,6 +118,7 @@ function leave(message) {
   for (const id of [...world.players.keys()]) world.removePlayer(id);
   world.setSmokes([]);
   G = null;
+  controls.inGame = false; controls.keys.clear();
   controls.releaseLock();
   hud.show(false); hud.flash(0); hud.smoke(false);
   document.documentElement.classList.remove('ingame');
