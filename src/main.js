@@ -38,7 +38,7 @@ $('btnJoin').onclick = () => {
   if (!/^[A-Z0-9]{4,6}$/.test(code)) return setNote('Room codes are 4 letters, like KQ7X.', true);
   joinOnline(code);
 };
-$('btnPractice').onclick = () => start(new LocalNet(playerName(), { bots: 7 }), 'PRACTICE');
+$('btnPractice').onclick = () => start(new LocalNet(playerName(), { bots: 7, roundMs: Number(new URLSearchParams(location.search).get('round')) * 1000 || undefined }), 'PRACTICE');
 $('btnLeave').onclick = () => leave();
 roomInput.addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin').click(); });
 
@@ -136,9 +136,10 @@ function onMessage(m) {
       if (m.round !== G.round.phase) { G.round.phase = m.round; G.round.endsAt = m.endsAt; }
       const me = m.players.find(p => p.id === G.id);
       if (me && G.self?.alive) {
-        // Snap back if the server rejected our movement (speed or wall check).
+        // Snap back only if we have drifted far from where the server has us (clamped speed, a
+        // wall it refused, or packet loss). Normal latency keeps this well under the threshold.
         const d = Math.hypot(me.p[0] - controls.pos.x, me.p[2] - controls.pos.z);
-        if (d > 1.5) controls.teleport(me.p);
+        if (d > 3) controls.teleport(me.p);
         if (G.self.code !== me.n && me.n) { G.self.code = me.n; hud.setMyNum(me.n, !!me.h); }
         hud.setMyNum(G.self.code, !!me.h);
       }
@@ -160,10 +161,10 @@ function applyYou(y, first = false) {
   hud.setScore(y.kills, y.deaths);
   if (y.code) hud.setMyNum(y.code, false);
   if (y.alive && (!was || first)) {
-    if (y.pos) controls.teleport(y.pos, G.spawnYaw);
-    controls.enabled = true; hud.alive(); G.buf = ''; hud.setTyped('', '');
+    if (y.pos) controls.teleport(y.pos, G.spawnYaw, true);
+    hud.alive(); G.buf = ''; hud.setTyped('', '');
   }
-  if (!y.alive) { controls.enabled = false; }
+  controls.enabled = !!y.alive && G.round.phase === 'play';
 }
 
 function applyRound(r, first = false) {
@@ -176,6 +177,7 @@ function applyRound(r, first = false) {
     hud.beep('round'); controls.enabled = false;
   } else {
     hud.scoreboard(false);
+    controls.enabled = !!G.self?.alive;
     if (!first) { hud.center(`Round ${r.number}`); hud.beep('round'); }
   }
 }
@@ -186,7 +188,7 @@ function onEvent(e) {
     case 'join': addPlayer({ id: e.id, name: e.name, color: colorFor(e.id) }); if (e.id !== G.id) hud.feed(`${esc(e.name)} joined`); break;
     case 'leave': G.players.delete(e.id); world.removePlayer(e.id); hud.feed(`${esc(e.name)} left`); break;
     case 'spawn':
-      if (e.id === G.id) { G.spawnYaw = e.yaw; controls.teleport(e.p, e.yaw); }
+      if (e.id === G.id) { G.spawnYaw = e.yaw; controls.teleport(e.p, e.yaw, true); controls.enabled = G.round.phase === 'play'; hud.alive(); }
       break;
     case 'kill': {
       const mine = e.by === G.id, me = e.victim === G.id;

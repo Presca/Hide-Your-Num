@@ -30,7 +30,7 @@ export class LocalNet {
     this.handlers = [];
     this.onclose = null;
     this.id = 'me';
-    this.core = new MatchCore({ now: performance.now(), roundMs });
+    this.core = new MatchCore({ now: performance.now(), roundMs, clock: () => performance.now() });
     const seed = (Math.random() * 1e9) | 0;
     for (let i = 0; i < Math.min(bots, CFG.MAX_PLAYERS - 1); i++) {
       this.core.addPlayer(`bot${i}`, botName(i), { bot: true, brain: new BotBrain(seed + i, difficulty * (0.8 + (i % 3) * 0.2)) });

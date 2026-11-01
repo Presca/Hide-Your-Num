@@ -55,10 +55,10 @@ export class Controls {
   }
   releaseLock() { if (this.locked && !this.noLock) document.exitPointerLock(); }
 
-  teleport(p, yaw) {
+  teleport(p, yaw, resetPitch = false) {
     this.pos = { x: p[0], y: p[1], z: p[2], vy: 0, onGround: true };
     if (Number.isFinite(yaw)) this.yaw = yaw;
-    this.pitch = 0;
+    if (resetPitch) this.pitch = 0;
   }
 
   update(dt, map) {

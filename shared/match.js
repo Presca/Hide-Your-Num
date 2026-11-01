@@ -11,8 +11,9 @@ const COS_FLASH = Math.cos((CFG.GADGETS.flash.coneDeg * Math.PI) / 180);
 const COLORS = ['#ff5d5d', '#ffb02e', '#ffe14d', '#7ddc4b', '#3fd1c9', '#4f8cff', '#9b6bff', '#ff6fd8', '#ff8a5b', '#5be0a8'];
 
 export class MatchCore {
-  constructor({ now = Date.now(), seed = (Math.random() * 2 ** 31) | 0, roundMs = CFG.ROUND_MS } = {}) {
+  constructor({ now = Date.now(), seed = (Math.random() * 2 ** 31) | 0, roundMs = CFG.ROUND_MS, clock = () => Date.now() } = {}) {
     this.now = now;
+    this.clock = clock;              // wall clock for input timing; ticks are too coarse for that
     this.players = new Map();
     this.smokes = [];
     this.outBroadcast = [];
@@ -33,7 +34,7 @@ export class MatchCore {
       alive: false, deadUntil: this.now, code: '',
       lockedUntil: 0, flashedUntil: 0, hiddenUntil: 0,
       cds: { smoke: 0, flash: 0, shuffle: 0 },
-      kills: 0, deaths: 0, streak: 0, lastInputAt: this.now,
+      kills: 0, deaths: 0, streak: 0, lastInputAt: this.clock(), moveBudget: 1,
       color: COLORS[this.players.size % COLORS.length], dirty: true,
     };
     this.players.set(id, p);
@@ -87,14 +88,22 @@ export class MatchCore {
     if (Number.isFinite(m.yaw)) p.yaw = wrapAngle(m.yaw);
     if (Number.isFinite(m.pitch)) p.pitch = Math.max(-1.5, Math.min(1.5, m.pitch));
     if (!p.alive || !Array.isArray(m.p) || m.p.length !== 3 || !m.p.every(Number.isFinite)) return;
-    const [x, y, z] = m.p;
-    const dt = Math.max(0.016, Math.min(0.5, (this.now - p.lastInputAt) / 1000));
-    p.lastInputAt = this.now;
-    const dx = x - p.pos.x, dz = z - p.pos.z;
-    const maxD = CFG.WALK_SPEED * dt * 1.7 + 0.35;
-    if (dx * dx + dz * dz > maxD * maxD) { p.dirty = true; return; }        // too fast: keep server position
+    let [x, y, z] = m.p;
     if (Math.abs(x) > this.map.half || Math.abs(z) > this.map.half || y < -0.5 || y > CFG.WALL_H + 2) return;
     if (this.map.blocks.some(b => !b.wall && y < b.h - 0.1 && pointInBlockXZ(x, z, b, CFG.PLAYER_R * 0.5))) return; // inside a block
+    // Speed check as a distance budget measured on the wall clock, so a burst of late packets is
+    // fine but nobody can sustain more than walking speed. Over budget: clamp rather than reject,
+    // which keeps an honest client with a jittery connection from being snapped back.
+    const t = this.clock();
+    const dt = Math.max(0, Math.min(0.5, (t - p.lastInputAt) / 1000));
+    p.lastInputAt = t;
+    p.moveBudget = Math.min(2.5, p.moveBudget + CFG.WALK_SPEED * dt * 1.3);
+    const dx = x - p.pos.x, dz = z - p.pos.z, dist = Math.hypot(dx, dz);
+    if (dist > p.moveBudget) {
+      const k = p.moveBudget / dist;
+      x = p.pos.x + dx * k; z = p.pos.z + dz * k;
+      p.moveBudget = 0; p.dirty = true;
+    } else p.moveBudget -= dist;
     p.pos.x = x; p.pos.y = y; p.pos.z = z;
   }
 
@@ -213,7 +222,7 @@ export class MatchCore {
     p.yaw = wrapAngle(Math.atan2(best.x, best.z)); // face the centre
     p.pitch = 0;
     p.alive = true; p.code = this.freshCode(); p.hiddenUntil = 0; p.flashedUntil = 0; p.lockedUntil = 0;
-    p.lastInputAt = this.now; p.dirty = true;
+    p.lastInputAt = this.clock(); p.moveBudget = 1; p.dirty = true;
     this.emit({ t: MSG.EVENT, k: 'spawn', id: p.id, p: [r2(p.pos.x), 0, r2(p.pos.z)], yaw: r2(p.yaw) });
   }
 
