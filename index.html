@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Hide Your Num</title>
 <meta name="description" content="A browser FPS where you eliminate opponents by typing the five-digit number on their forehead. Up to 20 players.">
 <meta name="theme-color" content="#0b0f1a">
@@ -32,11 +35,13 @@
       </div>
       <button id="btnPractice">Practice vs bots</button>
     </div>
+    <label class="check"><input type="checkbox" id="keyLook"> <span><b>Keyboard look</b>: arrow keys walk, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> turn the view. The mouse or trackpad still works. Off: WASD walks.</span></label>
     <p id="menuNote" class="note"></p>
     <details class="howto">
       <summary>How to play</summary>
       <ul>
-        <li><b>Move</b> WASD, <b>jump</b> Space, <b>look</b> mouse. Click the game to grab the mouse, Esc releases it.</li>
+        <li><b>Move</b> with the arrow keys, <b>turn</b> with WASD or the mouse, <b>jump</b> Space. Untick Keyboard look to walk with WASD instead. Click the game to grab the mouse, Esc releases it.</li>
+        <li><b>On a phone</b>: turn it sideways. Left thumb moves, right thumb looks, keypad types the digits.</li>
         <li><b>Eliminate</b>: look at someone's face and type their 5 digits. A wrong code locks your keys for a moment.</li>
         <li>You can only read a number you can actually see: in range, in front of you, no cover, no smoke, and the face turned towards you.</li>
         <li><b>Gadgets</b>: <kbd>Q</kbd> smoke (hides numbers inside), <kbd>E</kbd> flash (blinds people in front of you), <kbd>F</kbd> shuffle (new number for you).</li>
@@ -44,11 +49,12 @@
       </ul>
     </details>
   </div>
-  <footer>Desktop with keyboard and mouse. Inspired by <a href="https://store.steampowered.com/app/5313470/Figure_Me_Out/" rel="noopener" target="_blank">Figure Me Out</a>. <span id="build"></span></footer>
+  <footer>Keyboard and mouse, or a phone held sideways. Inspired by <a href="https://store.steampowered.com/app/5313470/Figure_Me_Out/" rel="noopener" target="_blank">Figure Me Out</a>. <span id="build"></span></footer>
 </section>
 
 <!-- In-game HUD -->
 <section id="hud" class="hud" hidden>
+  <div id="touch" class="touch" hidden></div>
   <div class="crosshair"></div>
   <div class="flash" id="flashFx"></div>
   <div class="smokeFx" id="smokeFx"></div>
@@ -77,10 +83,13 @@
     <p id="boardFoot" class="note"></p>
   </div>
   <div class="overlay paused" id="pausedOverlay" hidden>
-    <h2>Click to play</h2>
-    <p>Mouse released. Click to grab it again, or press <kbd>Esc</kbd> twice to leave.</p>
+    <h2 class="mouse-only">Click to play</h2>
+    <p class="mouse-only">Mouse released. Click to grab it again, or press <kbd>Esc</kbd> twice to leave.</p>
+    <h2 class="touch-only">Paused</h2>
+    <p class="touch-only">Tap anywhere to keep playing.</p>
     <button id="btnLeave">Leave match</button>
   </div>
+  <div class="rotate" id="rotate"><div><div class="phone"></div>Turn your phone sideways to play</div></div>
 </section>
 
 <script src="config.js"></script>

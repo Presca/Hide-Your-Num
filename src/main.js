@@ -6,8 +6,9 @@ import { World } from './world.js';
 import { Controls } from './controls.js';
 import { Hud } from './hud.js';
 import { SocketNet, LocalNet } from './net.js';
+import { TouchUI, isTouchDevice, goImmersive, leaveImmersive } from './touch.js';
 
-const BUILD = 8;   // bump when the client changes; shown in the menu so stale caches are obvious
+const BUILD = 9;   // bump when the client changes; shown in the menu so stale caches are obvious
 const $ = id => document.getElementById(id);
 const cfg = window.HYN_CONFIG || {};
 const canvas = $('gl');
@@ -22,11 +23,16 @@ nameInput.value = store.get('hyn.name') || '';
 const urlRoom = new URLSearchParams(location.search).get('room');
 if (urlRoom) roomInput.value = urlRoom.toUpperCase();
 $('build').textContent = `build ${BUILD}`;
+const keyLookBox = $('keyLook');
+keyLookBox.checked = store.get('hyn.keylook') !== '0';
+controls.keyLook = keyLookBox.checked;
+keyLookBox.addEventListener('change', () => { controls.keyLook = keyLookBox.checked; store.set('hyn.keylook', keyLookBox.checked ? '1' : '0'); });
 if (!cfg.workerUrl) {
   $('btnQuick').disabled = true; $('btnJoin').disabled = true;
   note.textContent = 'Online play is not configured on this site yet (see config.js). Practice works.';
 }
-if (!matchMedia('(pointer:fine)').matches) note.textContent = 'This game needs a mouse and keyboard.';
+const TOUCH = isTouchDevice();
+if (TOUCH) document.documentElement.classList.add('is-touch');
 // Check the match server on load so a blocked or down server is visible before anyone clicks.
 if (cfg.workerUrl) {
   const host = cfg.workerUrl.replace(/^https?:\/\//, '');
@@ -77,7 +83,7 @@ function joinOnline(code) {
 let G = null;   // current match state
 
 function start(net, roomLabel) {
-  if (!world) world = new World(canvas);
+  if (!world) world = new World(canvas, { lowPower: TOUCH });
   G = {
     net, room: roomLabel, id: null, map: null, seed: null, players: new Map(), self: null,
     offset: 0, rtt: null, lastSend: 0, lastPing: 0, buf: '', typedState: '', typedTimer: 0,
@@ -85,10 +91,14 @@ function start(net, roomLabel) {
   };
   net.on(onMessage);
   net.onclose = (code, reason) => { leave(code === 4001 ? 'That room is full.' : `Disconnected${reason ? `: ${reason}` : ''}.`); };
+  document.documentElement.classList.add('ingame');
   menu.hidden = true; hud.show(true); hud.setRoom(roomLabel); hud.paused(false); hud.alive(); hud.scoreboard(false);
   hud.setTyped('', ''); hud.setMyNum('');
   controls.enabled = false;
-  controls.requestLock();
+  if (TOUCH) {
+    G.touch = new TouchUI(controls, { onMenu: () => hud.paused(true), onBoard: () => toggleBoard() });
+    goImmersive();
+  } else controls.requestLock();
   if (controls.noLock) window.__hyn = { G, controls, world, hud };   // automated tests only
   G.raf = requestAnimationFrame(frame);
 }
@@ -96,19 +106,28 @@ function start(net, roomLabel) {
 function leave(message) {
   if (!G) return;
   cancelAnimationFrame(G.raf);
+  G.touch?.destroy();
+  if (TOUCH) leaveImmersive();
   G.net.close();
   for (const id of [...world.players.keys()]) world.removePlayer(id);
   world.setSmokes([]);
   G = null;
   controls.releaseLock();
   hud.show(false); hud.flash(0); hud.smoke(false);
+  document.documentElement.classList.remove('ingame');
   menu.hidden = false;
   if (message) setNote(message, true); else setNote('');
 }
 
 controls.onLockChange = locked => { if (G) hud.paused(!locked); };
-canvas.addEventListener('click', () => { if (G) controls.requestLock(); });
-$('pausedOverlay').addEventListener('click', e => { if (e.target.tagName !== 'BUTTON' && G) controls.requestLock(); });
+canvas.addEventListener('click', () => { if (G && !TOUCH) controls.requestLock(); });
+$('pausedOverlay').addEventListener('click', e => { if (e.target.tagName === 'BUTTON' || !G) return; if (TOUCH) hud.paused(false); else controls.requestLock(); });
+$('scoreboard').addEventListener('click', () => { if (TOUCH && G?.boardHeld) toggleBoard(); });
+function toggleBoard() {
+  if (!G || G.round.phase !== 'play') return;
+  G.boardHeld = !G.boardHeld;
+  hud.scoreboard(G.boardHeld, G.lastScores || [], G.id, 'Scoreboard', `Round ${G.round.number} · ${G.players.size} players`);
+}
 
 controls.onDigit = d => {
   if (!G || !G.self) return;
@@ -244,6 +263,7 @@ function frame(t) {
   hud.setTimer(G.round.endsAt - now, G.round.phase);
   if (G.self) {
     hud.setGadgets(G.self.cds, now);
+    G.touch?.setGadgets(G.self.cds, now);
     if (!G.self.alive) hud.respawnCountdown(G.self.deadUntil - now);
     const flashLeft = (G.self.flashedUntil || 0) - now;
     hud.flash(flashLeft > 0 ? Math.min(1, flashLeft / 900) : 0);

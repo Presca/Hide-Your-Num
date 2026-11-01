@@ -14,7 +14,8 @@ yours. Inspired by [Figure Me Out](https://store.steampowered.com/app/5313470/Fi
 - **Modes.** Quick play drops you into the fullest open room, Join room uses a 4-letter code you can
   share as a link (`?room=KQ7X`), Practice runs the same rules in your tab against bots.
 
-Desktop with keyboard and mouse. WASD to move, Space to jump, Tab for the scoreboard.
+Keyboard and mouse: WASD to move, Space to jump, Tab for the scoreboard. On a phone held sideways:
+left thumb moves, right thumb looks, and an on-screen keypad types the digits.
 
 ## What runs where
 

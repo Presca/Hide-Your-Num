@@ -5,9 +5,9 @@ import { CFG } from '../shared/constants.js';
 const TONES = [['#5b6a9c', '#7383b8', '#3a4468'], ['#9a7a72', '#b3928a', '#5e4a44'], ['#5f8f84', '#78aa9e', '#3b5e56'], ['#7f6fa3', '#978ac0', '#4e4466'], ['#9a9166', '#b5ac80', '#5e5840'], ['#5e7ea6', '#7797c2', '#3a5070']];
 
 export class World {
-  constructor(canvas) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  constructor(canvas, { lowPower = false } = {}) {
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPower, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, lowPower ? 1.5 : 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -23,7 +23,7 @@ export class World {
     const sun = new THREE.DirectionalLight('#fff1d6', 2.6);
     sun.position.set(28, 42, 18);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(lowPower ? 1024 : 2048, lowPower ? 1024 : 2048);
     sun.shadow.camera.left = -42; sun.shadow.camera.right = 42; sun.shadow.camera.top = 42; sun.shadow.camera.bottom = -42;
     sun.shadow.camera.near = 5; sun.shadow.camera.far = 120; sun.shadow.bias = -0.0008;
     this.scene.add(sun);
